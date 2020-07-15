@@ -9,75 +9,88 @@
 import datetime
 from user_database import *
 
-start_time = datetime.datetime.now()
-
 #Populate the list of users
-list_of_users = []
-for keys in UserMovieRatings:
-	list_of_users.append(keys)
-#print(list_of_users)	
+def get_list_of_users(user_movie_ratings):
+	list_of_users = []
+	for keys in user_movie_ratings:
+		list_of_users.append(keys)
+	return list_of_users
 
 #Initializing a dictionary which has the min dist, movie recommendation list and recommended 
 #user for all the users 
-predictor_dict ={}	
-for j in list_of_users:
-	predictor_dict[j] = {"recommended_user": '', "dist":0, "recommended_list": []}
-#print(predictor_dict)
+def init_predictor_dict(list_of_users):	
+	predictor_dict = {}
+	for user in list_of_users:
+		predictor_dict[user] = {"recommended_user": '', "dist": 0, "recommended_list": []}
+	return predictor_dict
 		
 	
 #Populate the list of movies per user:
-list_of_movies = [[]]* len(list_of_users)
-for idx,i in enumerate(list_of_users):
-	#print(idx,i)
-	list_of_movies[idx] = []
-	for keys in UserMovieRatings[i]:
-		list_of_movies[idx].append(keys)
-	#print(list_of_movies[idx])		
-
+def movies_rated_per_user(user_movie_ratings,list_of_users):
+	list_of_movies = [[]]* len(list_of_users)
+	for idx,user in enumerate(list_of_users):
+		#print(idx,user)
+		list_of_movies[idx] = []
+		for keys in user_movie_ratings[user]:
+			list_of_movies[idx].append(keys)
+	   #print(list_of_movies[idx])		
+	return list_of_movies
 
 #Code to obtain the recommendation list
-for idx,i in enumerate(list_of_users):
-	#print(idx,i)
-	min_dist = 0
-	list_of_min_dist = []
-	#print(list_of_movies)
-	#print(type(list_of_movies))
-	for sub_idx,j in enumerate(list_of_users):
-		if idx == sub_idx:
-			continue			
-		temp_min_dist = 0
-		for movie_name in list_of_movies[idx]:
-			if movie_name in list_of_movies[sub_idx]:
-				temp_min_dist = temp_min_dist + abs(UserMovieRatings[i][movie_name] - UserMovieRatings[j][movie_name])
-				#print(temp_min_dist)
-			else:
-				continue
-		if (predictor_dict[str(i)]["dist"] == 0) or (predictor_dict[str(i)]["dist"] > temp_min_dist):
-			predictor_dict[str(i)]["dist"] = temp_min_dist
-			predictor_dict[str(i)]["recommended_user"] = j
+def get_nearest_user_by_calculating_manhattand(user_movie_ratings, list_of_users, list_of_movies, predictor_dict):
+	for idx,user_1 in enumerate(list_of_users):
+		#print(idx,user_1)
+		min_dist = 0
+		list_of_min_dist = []
+		#print(list_of_movies)
+		#print(type(list_of_movies))
+		for sub_idx,user_2 in enumerate(list_of_users):
+			if idx == sub_idx:
+				continue			
+			temp_min_dist = 0
+			for movie_name in list_of_movies[idx]:
+				if movie_name in list_of_movies[sub_idx]:
+					temp_min_dist = temp_min_dist + abs(user_movie_ratings[user_1][movie_name] - user_movie_ratings[user_2][movie_name])
+					#print(temp_min_dist)
+				else:
+					continue
+			if (predictor_dict[str(user_1)]["dist"] == 0) or (predictor_dict[str(user_1)]["dist"] > temp_min_dist):
+				predictor_dict[str(user_1)]["dist"] = temp_min_dist
+				predictor_dict[str(user_1)]["recommended_user"] = user_2
+	#print(predictor_dict)
+	return 	predictor_dict	
 
-#print(predictor_dict)
-
-print('"""""""""""Recommended movies""""""""""""')
 
 #Update the recommended list based on the minimum distance :
-for idx,user in enumerate(list_of_users):
-	recommended_user = predictor_dict[str(user)]["recommended_user"]
-	recommended_user_index = list_of_users.index(recommended_user)
-	recommendation_list = []
-	for j in list_of_movies[recommended_user_index]:
-		if j == user:
-			continue
-		if j not in list_of_movies[idx]:
-			new_movie_recommended =  (j, UserMovieRatings[recommended_user][j] )
-			recommendation_list.append(new_movie_recommended)
-	predictor_dict[str(user)]["recommended_list"] = recommendation_list
-	print("{} : ".format(user), end = '')
-	print(predictor_dict[str(user)]["recommended_list"])	
+def get_movie_recommendations(predictor_dict, user_movie_ratings, list_of_movies, list_of_users):
+	for idx,user in enumerate(list_of_users):
+		recommended_user = predictor_dict[str(user)]["recommended_user"]
+		recommended_user_index = list_of_users.index(recommended_user)
+		recommendation_list = []
+		for movie in list_of_movies[recommended_user_index]:
+			if movie not in list_of_movies[idx]:
+				new_movie_recommended =  (movie, user_movie_ratings[recommended_user][movie] )
+				recommendation_list.append(new_movie_recommended)
+		predictor_dict[str(user)]["recommended_list"] = recommendation_list
+		print("{} : ".format(user), end = '')
+		print(predictor_dict[str(user)]["recommended_list"])	
 	
-end_time = datetime.datetime.now()	
 
-delta = end_time - start_time
-#print(delta)
-#print("Time taken in micro-seconds:")
-#print(int(delta.total_seconds() * 1000000)) # microsseconds
+
+def main():
+	#start_time = datetime.datetime.now()
+	
+	list_of_users = get_list_of_users(user_movie_ratings)
+	predictor_dict = init_predictor_dict(list_of_users)
+	list_of_movies = movies_rated_per_user(user_movie_ratings,list_of_users)
+	predictor_dict = get_nearest_user_by_calculating_manhattand(user_movie_ratings, list_of_users, list_of_movies, predictor_dict)
+	get_movie_recommendations(predictor_dict, user_movie_ratings, list_of_movies, list_of_users)
+	
+	#end_time = datetime.datetime.now()	
+	#delta = end_time - start_time
+	#print(delta)
+	#print("Time taken in micro-seconds:")
+	#print(int(delta.total_seconds() * 1000000)) # microsseconds
+
+if __name__ == "__main__":
+	main()
